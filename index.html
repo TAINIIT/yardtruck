@@ -146,6 +146,7 @@
             to { transform: rotate(360deg); }
         }
         .animate-spin { animation: spin 1s linear infinite; transform-origin: center; }
+
     </style>
 </head>
 <body>
@@ -196,7 +197,7 @@
                         <label for="yard-truck-no" class="form-label text-right pr-4 mb-2 md:mb-0">Yard Truck No.</label>
                         <div class="col-span-3 flex items-center gap-2">
                             <div class="relative flex-grow">
-                                <input type="text" id="yard-truck-no" placeholder="input yard truck no." class="w-full p-3 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <input type="text" id="yard-truck-no" placeholder="Select from list -->" readonly class="w-full p-3 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 cursor-not-allowed">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                                 </div>
@@ -445,9 +446,10 @@
             });
         }
 
-        function resetTemporaryAnimations() {
+        function resetAllAnimations() {
             truckGraphicContainer.classList.remove('animate-vibrate');
             headlight.classList.remove('animate-blink');
+            wheels.forEach(wheel => wheel.classList.remove('animate-spin'));
         }
 
         function setJobInfo(type, vessel, snbl, location, color) {
@@ -466,7 +468,7 @@
             updateClock(appHeaderTime);
             appTimeInterval = setInterval(() => updateClock(appHeaderTime), 1000);
             setJobInfo('', '', '', '', '#facc15'); 
-            resetTemporaryAnimations();
+            resetAllAnimations();
         }
 
         function handleLogout() {
@@ -476,6 +478,7 @@
             passwordInput.value = '';
             yardTruckInput.value = '';
             clearInterval(appTimeInterval);
+            resetAllAnimations();
         }
         
         // --- EVENT LISTENERS ---
@@ -511,8 +514,7 @@
         // Footer Buttons
         btnRefresh.addEventListener('click', () => {
             console.log('Refresh button clicked');
-            // Add refresh logic here if needed
-            location.reload(); // Simple page refresh
+            location.reload(); 
         });
 
         btnStoppage.addEventListener('click', () => {
@@ -527,30 +529,32 @@
             openTruckModal((selectedTruck) => {
                 appHeaderTruckNo.textContent = selectedTruck;
                 setJobInfo('VI', 'VIET START 01', 'BILL00007', 'B1/WH1-A1', '#4ade80'); // Green
-                resetTemporaryAnimations();
+                resetAllAnimations();
                 truckGraphicContainer.classList.add('animate-vibrate');
                 headlight.classList.add('animate-blink');
+                // Bánh xe không quay
             });
         });
 
         btnWhImport.addEventListener('click', () => {
             setJobInfo('', '', '', '', '#facc15'); // Yellow, no text
-            resetTemporaryAnimations();
+            resetAllAnimations();
         });
 
         btnWhExport.addEventListener('click', () => {
             openTruckModal((selectedTruck) => {
                 appHeaderTruckNo.textContent = selectedTruck;
                 setJobInfo('VO', 'NEPTUNE 01', 'SN000008', 'B2', '#4ade80'); // Green
-                resetTemporaryAnimations();
+                resetAllAnimations();
                 truckGraphicContainer.classList.add('animate-vibrate');
                 headlight.classList.add('animate-blink');
+                // Bánh xe không quay
             });
         });
 
         btnLoading.addEventListener('click', () => {
             setJobInfo('', '', '', '', '#facc15'); // Yellow, no text
-            resetTemporaryAnimations();
+            resetAllAnimations();
         });
 
     </script>
