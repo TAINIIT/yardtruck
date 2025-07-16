@@ -9,12 +9,13 @@
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <style>
         /* General Styles */
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f0f2f5;
+            overflow: hidden; /* Prevent scrollbars from appearing */
         }
 
         /* --- Login Screen Styles --- */
@@ -38,14 +39,15 @@
         /* --- Modal Styles --- */
         .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background-color: white; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); max-width: 90%; width: 600px; overflow: hidden; }
-        .truck-modal-header { background-color: #333; color: white; padding: 0.5rem 1rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+        .truck-modal-header, .stoppage-modal-header { background-color: #333; color: white; padding: 0.5rem 1rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
         .modal-body { padding: 1rem; }
-        .truck-modal-footer { background-color: #333; padding: 0.75rem; text-align: center; }
+        .modal-footer { background-color: #333; padding: 0.75rem; text-align: center; }
         .modal-cancel-btn { padding: 0.5rem 1.5rem; background-color: #555; color: white; border-radius: 0.375rem; cursor: pointer; border: 1px solid #777; transition: background-color 0.3s; }
         .modal-cancel-btn:hover { background-color: #666; }
-        .truck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1px; background-color: #ccc; border: 1px solid #ccc; }
-        .truck-item { background-color: white; padding: 0.75rem; text-align: center; cursor: pointer; transition: background-color 0.2s; }
-        .truck-item:hover, .truck-item.selected { background-color: #3b82f6; color: white; }
+        .truck-grid, .stoppage-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1px; background-color: #ccc; border: 1px solid #ccc; }
+        .truck-item, .stoppage-item { background-color: #f0f0f0; padding: 0.75rem; text-align: center; cursor: pointer; transition: background-color 0.2s; border: 1px solid #d1d5db; }
+        .truck-item:hover, .truck-item.selected, .stoppage-item:hover { background-color: #3b82f6; color: white; }
+        .stoppage-item.highlighted { border: 2px solid red; }
 
         /* --- Main App Screen Styles --- */
         .main-app-screen {
@@ -63,9 +65,17 @@
             gap: 1.5rem;
             font-weight: bold;
         }
-        .app-header .status {
-            color: #6ee7b7; /* A light green for connected status */
+        .header-info { flex-grow: 1; display: flex; gap: 1.5rem; }
+        .header-actions { display: flex; gap: 0.5rem; }
+        .header-actions button {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            border-radius: 0.25rem;
         }
+        .header-actions button:hover { background-color: rgba(255, 255, 255, 0.3); }
+
+        .app-header .status { color: #6ee7b7; }
         .app-main {
             flex-grow: 1;
             display: flex;
@@ -76,24 +86,27 @@
         }
         .truck-graphic {
             position: relative;
-            max-width: 900px;
+            max-width: 950px;
             width: 100%;
         }
         .job-info-overlay {
             position: absolute;
-            top: 29%;
-            left: 32%;
-            width: 67%;
-            height: 47%;
+            top: 25%;
+            left: 31%;
+            width: 68%;
+            height: 48%;
             background-color: #facc15; /* Yellow background */
             border: 2px dotted #333;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 2rem;
+            padding: 0.5rem;
             font-weight: bold;
             color: #333;
+            transition: background-color 0.3s ease;
+            text-align: center;
+            line-height: 1.2;
         }
         .app-footer {
             background-color: #ccc;
@@ -101,6 +114,7 @@
             display: flex;
             justify-content: center;
             gap: 1rem;
+            flex-wrap: wrap;
         }
         .app-footer button {
             padding: 0.75rem 2.5rem;
@@ -114,6 +128,24 @@
         .app-footer button:hover {
             opacity: 0.85;
         }
+        
+        /* --- ANIMATIONS --- */
+        @keyframes vibrate {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-1px); }
+            50% { transform: translateX(1px); }
+            75% { transform: translateX(-1px); }
+        }
+        .animate-vibrate { animation: vibrate 0.2s linear infinite; }
+
+        @keyframes blink { 50% { opacity: 0.2; } }
+        .animate-blink { animation: blink 1s linear infinite; }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin { animation: spin 1s linear infinite; transform-origin: center; }
     </style>
 </head>
 <body>
@@ -141,6 +173,7 @@
                     </p>
                 </div>
                 <form id="login-form" class="space-y-6">
+                    <!-- Form inputs -->
                     <div class="grid grid-cols-1 md:grid-cols-4 items-center">
                         <label for="user-id" class="form-label text-right pr-4 mb-2 md:mb-0">User Id<span class="text-red-500">*</span></label>
                         <div class="relative col-span-3">
@@ -184,70 +217,79 @@
     <!-- =============================================================== -->
     <div id="main-app-screen" class="main-app-screen hidden">
         <header class="app-header">
-            <span id="app-user-id">MOSTADMIN</span> -
-            <span id="app-time">13:50:35</span> -
-            <span id="app-truck-no">TT-2X-20</span> -
-            <span>Version 4.5</span>
-            <span class="status ml-auto">Connected</span>
+            <div class="header-info">
+                <span id="app-user-id">MOSTADMIN</span> -
+                <span id="app-time">13:50:35</span> -
+                <span id="app-truck-no">TT-2X-20</span> -
+                <span>Version 4.5</span>
+            </div>
+            <div class="header-actions">
+                <button id="btn-discharging">Discharging</button>
+                <button id="btn-wh-import">WH Check for Import</button>
+                <button id="btn-wh-export">WH Check for Export</button>
+                <button id="btn-loading">Loading</button>
+            </div>
+            <span class="status ml-4">Connected</span>
         </header>
         <main class="app-main">
-            <div class="truck-graphic">
-                <!-- UPDATED TRUCK SVG - More detailed and visually appealing -->
-                <svg viewBox="0 0 900 450" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Truck body and details -->
-                    <g stroke="#2d3748" stroke-width="2">
-                        <!-- Trailer chassis -->
-                        <rect x="290" y="340" width="560" height="15" fill="#6b7280" />
+            <div id="truck-graphic-container" class="truck-graphic">
+                <svg viewBox="0 0 950 450" xmlns="http://www.w3.org/2000/svg">
+                    <g id="chassis-and-trailer">
+                        <rect x="295" y="120" width="650" height="225" fill="transparent" stroke="none"/>
+                        <rect x="285" y="345" width="665" height="15" fill="#374151"/>
+                        <rect x="10" y="345" width="280" height="20" fill="#1f2937"/>
+                        <rect x="250" y="330" width="60" height="15" fill="#4b5563"/>
+                    </g>
+                    <g id="cab-and-details">
+                        <path d="M20,345 L20,200 Q20,180 40,180 L140,180 L190,120 L270,120 L270,345 Z" fill="#f9fafb" stroke="#111827" stroke-width="2"/>
+                        <path d="M45,195 L135,195 L172,140 L255,140 L255,280 L45,280 Z" fill="#a1a1aa" stroke="#111827" stroke-width="2"/>
+                        <rect x="50" y="295" width="25" height="5" fill="#4b5563"/>
+                        <path d="M220,120 L220,100 Q220,80 240,80 L240,120 Z" fill="#d1d5db" stroke="#111827" stroke-width="2"/>
+                        <rect x="195" y="120" width="45" height="10" fill="#d1d5db" stroke="#111827" stroke-width="2"/>
+                        <rect x="5" y="345" width="15" height="30" fill="#4b5563"/>
+                        <rect x="20" y="325" width="20" height="20" fill="#d1d5db" stroke="#111827" stroke-width="1"/>
+                        <rect id="headlight" x="15" y="290" width="20" height="10" fill="#fef08a" stroke="#111827" stroke-width="1"/>
+                    </g>
+                    <g id="wheels-and-guards">
+                        <defs>
+                            <g id="detailed-wheel">
+                                <circle cx="0" cy="0" r="45" fill="#1f2937"/>
+                                <circle cx="0" cy="0" r="22" fill="#e5e7eb"/>
+                                <circle cx="0" cy="0" r="10" fill="#9ca3af"/>
+                                <circle cx="0" cy="0" r="4" fill="#4b5563"/>
+                                <circle cx="15" cy="0" r="3" fill="#4b5563"/> <circle cx="-15" cy="0" r="3" fill="#4b5563"/>
+                                <circle cx="0" cy="15" r="3" fill="#4b5563"/> <circle cx="0" cy="-15" r="3" fill="#4b5563"/>
+                                <circle cx="10.6" cy="10.6" r="3" fill="#4b5563"/> <circle cx="-10.6" cy="10.6" r="3" fill="#4b5563"/>
+                                <circle cx="10.6" cy="-10.6" r="3" fill="#4b5563"/> <circle cx="-10.6" cy="-10.6" r="3" fill="#4b5563"/>
+                            </g>
+                            <pattern id="stripe-pattern" patternUnits="userSpaceOnUse" width="20" height="20" patternTransform="rotate(45)">
+                                <rect width="10" height="20" fill="white"/>
+                                <rect x="10" width="10" height="20" fill="black"/>
+                            </pattern>
+                        </defs>
+                        <rect x="65" y="300" width="100" height="60" fill="url(#stripe-pattern)"/>
+                        <rect x="590" y="300" width="100" height="60" fill="url(#stripe-pattern)"/>
+                        <rect x="790" y="300" width="100" height="60" fill="url(#stripe-pattern)"/>
                         
-                        <!-- Cab -->
-                        <path d="M40,340 L40,200 L110,200 L150,150 L250,150 L250,340 Z" fill="#f7fafc" />
-                        <path d="M55,210 L105,210 L140,160 L240,160 L240,260 L55,260 Z" fill="#a0aec0" /> <!-- Window -->
-                        <rect x="250" y="130" width="15" height="80" fill="#a0aec0" /> <!-- Air intake -->
-                        <rect x="20" y="340" width="20" height="30" fill="#a0aec0" /> <!-- Bumper -->
-                        
-                        <!-- Main truck chassis -->
-                        <rect x="40" y="340" width="225" height="20" fill="#4a5568" />
-                        
-                        <!-- Exhaust Pipe -->
-                        <g>
-                            <rect x="180" y="150" width="10" height="60" fill="#a0aec0" transform="rotate(-90 185 180)" />
-                            <rect x="180" y="120" width="10" height="40" fill="#a0aec0" />
+                        <g id="wheel-group">
+                           <use href="#detailed-wheel" x="115" y="365" class="wheel"/>
+                           <use href="#detailed-wheel" x="240" y="365" class="wheel"/>
+                           <use href="#detailed-wheel" x="640" y="365" class="wheel"/>
+                           <use href="#detailed-wheel" x="840" y="365" class="wheel"/>
                         </g>
                     </g>
-
-                    <!-- Wheels (with stripe detail) -->
-                    <g>
-                        <defs>
-                            <g id="wheel">
-                                <circle cx="0" cy="0" r="45" fill="#1a202c" />
-                                <circle cx="0" cy="0" r="42" fill="white" />
-                                <circle cx="0" cy="0" r="40" fill="#1a202c" />
-                                <circle cx="0" cy="0" r="20" fill="#d1d5db" stroke="#6b7280" stroke-width="3" />
-                                <circle cx="0" cy="0" r="5" fill="#4a5568" />
-                            </g>
-                        </defs>
-                        
-                        <use href="#wheel" x="100" y="360" />
-                        <use href="#wheel" x="220" y="360" />
-                        
-                        <use href="#wheel" x="650" y="360" />
-                        <use href="#wheel" x="780" y="360" />
-                    </g>
-                    
-                    <!-- Placeholder for yellow container -->
-                    <rect x="290" y="130" width="600" height="210" fill="transparent" />
                 </svg>
-                <div class="job-info-overlay">
-                    <span class="text-6xl">VI</span>
-                    <span class="text-4xl mt-4">VIET START 01</span>
-                    <span class="text-2xl mt-8">SN No. / BL No.</span>
-                    <span class="text-2xl mt-2">Berth No/ Warehouse Location</span>
+                <div id="job-info-overlay" class="job-info-overlay">
+                    <span id="job-type" class="text-5xl font-black"></span>
+                    <span id="job-vessel" class="text-3xl mt-3"></span>
+                    <span id="job-sn-bl" class="text-xl mt-6"></span>
+                    <span id="job-location" class="text-xl mt-1"></span>
                 </div>
             </div>
         </main>
         <footer class="app-footer">
-            <button class="bg-blue-500 text-white">Refresh</button>
-            <button class="bg-red-500 text-white">Stop working(Stoppage)</button>
+            <button id="btn-refresh" class="bg-blue-500 text-white">Refresh</button>
+            <button id="btn-stoppage" class="bg-red-500 text-white">Stop working(Stoppage)</button>
             <button id="logout-btn" class="bg-gray-700 text-white">Log Out</button>
         </footer>
     </div>
@@ -259,18 +301,35 @@
     <div id="truck-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <header class="truck-modal-header">
-                <span id="modal-time">- 10:30:53 -</span>
+                <span id="modal-time-truck">- 10:30:53 -</span>
                 <span>7.739.1430</span>
                 <span class="font-semibold text-green-300">Connected</span>
             </header>
             <main class="modal-body">
                 <div id="truck-grid-container" class="truck-grid"></div>
             </main>
-            <footer class="truck-modal-footer">
+            <footer class="modal-footer">
                 <button id="truck-modal-cancel" class="modal-cancel-btn">Cancel</button>
             </footer>
         </div>
     </div>
+    
+    <div id="stoppage-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <header class="stoppage-modal-header">
+                <span>Stoppage</span>
+                <span>7.739.1430</span>
+                <span class="font-semibold text-green-300">Connected</span>
+            </header>
+            <main class="modal-body">
+                <div id="stoppage-grid-container" class="stoppage-grid"></div>
+            </main>
+            <footer class="modal-footer">
+                <button id="stoppage-modal-cancel" class="modal-cancel-btn">Cancel</button>
+            </footer>
+        </div>
+    </div>
+
     <div id="login-status-modal" class="modal-backdrop hidden">
         <div class="modal-content !w-auto !max-w-md text-center p-8">
             <h3 id="login-status-title" class="text-2xl font-bold mb-4"></h3>
@@ -284,6 +343,7 @@
 
         // --- DATA ---
         const truckList = ['G2501', 'G3601', 'G3603', 'TR001', 'TR003', 'TR004', 'TR006', 'TR007', 'TR008', 'TR009', 'TR011', 'TR012', 'TR013', 'TRD01', 'TRL02', 'TRL03', 'TT016', 'TT017', 'TT018', 'TT019', 'TT020', 'TT021', 'TT022', 'TT023', 'TT025', 'TT027'];
+        const stoppageReasons = ['ARMG POWER BREAKDOWN', 'QC BREAKDOWN', 'DELAY DUE TO ITT', 'OOG WITH FRAME', 'OTHER', 'BREAK', 'RFID NOT READING', 'DELAY DUE TO SAFETY REASONS', 'USING SAFETY CAGE', 'SYSTEM ISSUE', 'Strong Wind'];
 
         // --- ELEMENTS ---
         const loginScreenContainer = document.getElementById('login-screen-container');
@@ -300,15 +360,38 @@
         const loginStatusTitle = document.getElementById('login-status-title');
         const loginStatusMessage = document.getElementById('login-status-message');
         const loginStatusCloseBtn = document.getElementById('login-status-close');
-        const modalTimeEl = document.getElementById('modal-time');
+        const modalTimeTruckEl = document.getElementById('modal-time-truck');
         const logoutBtn = document.getElementById('logout-btn');
         const appHeaderTime = document.getElementById('app-time');
         const appHeaderUserId = document.getElementById('app-user-id');
         const appHeaderTruckNo = document.getElementById('app-truck-no');
+        
+        // App screen elements
+        const jobInfoOverlay = document.getElementById('job-info-overlay');
+        const jobTypeEl = document.getElementById('job-type');
+        const jobVesselEl = document.getElementById('job-vessel');
+        const jobSnBlEl = document.getElementById('job-sn-bl');
+        const jobLocationEl = document.getElementById('job-location');
+        const btnDischarging = document.getElementById('btn-discharging');
+        const btnWhImport = document.getElementById('btn-wh-import');
+        const btnWhExport = document.getElementById('btn-wh-export');
+        const btnLoading = document.getElementById('btn-loading');
+        const btnRefresh = document.getElementById('btn-refresh');
+        const btnStoppage = document.getElementById('btn-stoppage');
+        const truckGraphicContainer = document.getElementById('truck-graphic-container');
+        const headlight = document.getElementById('headlight');
+        const wheels = document.querySelectorAll('.wheel');
+
+        // Stoppage Modal Elements
+        const stoppageModal = document.getElementById('stoppage-modal');
+        const stoppageGridContainer = document.getElementById('stoppage-grid-container');
+        const stoppageModalCancelBtn = document.getElementById('stoppage-modal-cancel');
+
 
         // --- STATE ---
         let truckModalTimeInterval;
         let appTimeInterval;
+        let onTruckSelectedCallback = null;
 
         // --- FUNCTIONS ---
         function showModal(modalElement) { modalElement.classList.remove('hidden'); }
@@ -317,7 +400,15 @@
         function updateClock(element) {
             const now = new Date();
             const timeString = now.toLocaleTimeString('en-US', { hour12: false });
-            element.textContent = timeString;
+            if(element) element.textContent = timeString;
+        }
+
+        function openTruckModal(callback) {
+            onTruckSelectedCallback = callback;
+            populateTruckGrid();
+            updateClock(modalTimeTruckEl);
+            truckModalTimeInterval = setInterval(() => updateClock(modalTimeTruckEl), 1000);
+            showModal(truckModal);
         }
 
         function populateTruckGrid() {
@@ -327,53 +418,71 @@
                 item.className = 'truck-item';
                 item.textContent = truck;
                 item.addEventListener('click', () => {
-                    yardTruckInput.value = truck;
+                    if (onTruckSelectedCallback) {
+                        onTruckSelectedCallback(truck);
+                    }
                     hideModal(truckModal);
                     clearInterval(truckModalTimeInterval);
                 });
                 truckGridContainer.appendChild(item);
             });
         }
+        
+        function populateStoppageGrid() {
+            stoppageGridContainer.innerHTML = '';
+            stoppageReasons.forEach(reason => {
+                const item = document.createElement('div');
+                item.className = 'stoppage-item';
+                item.textContent = reason;
+                if (reason === 'BREAK') {
+                    item.classList.add('highlighted');
+                }
+                item.addEventListener('click', () => {
+                    console.log('Stoppage Reason Selected:', reason);
+                    hideModal(stoppageModal);
+                });
+                stoppageGridContainer.appendChild(item);
+            });
+        }
 
-        function showLoginStatus(success, message) {
-            loginStatusTitle.textContent = success ? 'Login Successful' : 'Login Failed';
-            loginStatusTitle.className = success ? 'text-green-600 text-2xl font-bold mb-4' : 'text-red-600 text-2xl font-bold mb-4';
-            loginStatusMessage.textContent = message;
-            showModal(loginStatusModal);
+        function resetTemporaryAnimations() {
+            truckGraphicContainer.classList.remove('animate-vibrate');
+            headlight.classList.remove('animate-blink');
+        }
+
+        function setJobInfo(type, vessel, snbl, location, color) {
+            jobTypeEl.textContent = type;
+            jobVesselEl.textContent = vessel;
+            jobSnBlEl.textContent = snbl;
+            jobLocationEl.textContent = location;
+            jobInfoOverlay.style.backgroundColor = color;
         }
 
         function handleLogin(userId, truckNo) {
-            // Hide login screen, show app screen
             loginScreenContainer.classList.add('hidden');
             mainAppScreen.classList.remove('hidden');
-
-            // Update app header
             appHeaderUserId.textContent = userId;
-            appHeaderTruckNo.textContent = truckNo || 'N/A'; // Use N/A if no truck is selected
-
-            // Start the main app clock
+            appHeaderTruckNo.textContent = truckNo || 'N/A';
             updateClock(appHeaderTime);
             appTimeInterval = setInterval(() => updateClock(appHeaderTime), 1000);
+            setJobInfo('', '', '', '', '#facc15'); 
+            resetTemporaryAnimations();
         }
 
         function handleLogout() {
-             // Hide app screen, show login screen
             mainAppScreen.classList.add('hidden');
             loginScreenContainer.classList.remove('hidden');
-
-            // Clear credentials and stop clock
             userIdInput.value = '';
             passwordInput.value = '';
             yardTruckInput.value = '';
             clearInterval(appTimeInterval);
         }
-
+        
         // --- EVENT LISTENERS ---
         yardTruckBtn.addEventListener('click', () => {
-            populateTruckGrid();
-            updateClock(modalTimeEl);
-            truckModalTimeInterval = setInterval(() => updateClock(modalTimeEl), 1000);
-            showModal(truckModal);
+            openTruckModal((selectedTruck) => {
+                yardTruckInput.value = selectedTruck;
+            });
         });
 
         truckModalCancelBtn.addEventListener('click', () => {
@@ -386,19 +495,63 @@
             const userId = userIdInput.value.trim();
             const password = passwordInput.value;
             const truckNo = yardTruckInput.value.trim();
-
             if (userId === 'MOSTADMIN' && password === '909090') {
                 handleLogin(userId, truckNo);
             } else {
-                showLoginStatus(false, 'Invalid User ID or Password. Please try again.');
+                showModal(loginStatusModal);
+                loginStatusTitle.textContent = 'Login Failed';
+                loginStatusTitle.className = 'text-red-600 text-2xl font-bold mb-4';
+                loginStatusMessage.textContent = 'Invalid User ID or Password.';
             }
         });
+        
+        loginStatusCloseBtn.addEventListener('click', () => hideModal(loginStatusModal));
+        logoutBtn.addEventListener('click', handleLogout);
 
-        loginStatusCloseBtn.addEventListener('click', () => {
-            hideModal(loginStatusModal);
+        // Footer Buttons
+        btnRefresh.addEventListener('click', () => {
+            console.log('Refresh button clicked');
+            // Add refresh logic here if needed
+            location.reload(); // Simple page refresh
         });
 
-        logoutBtn.addEventListener('click', handleLogout);
+        btnStoppage.addEventListener('click', () => {
+            populateStoppageGrid();
+            showModal(stoppageModal);
+        });
+        stoppageModalCancelBtn.addEventListener('click', () => hideModal(stoppageModal));
+
+
+        // Header Action Buttons
+        btnDischarging.addEventListener('click', () => {
+            openTruckModal((selectedTruck) => {
+                appHeaderTruckNo.textContent = selectedTruck;
+                setJobInfo('VI', 'VIET START 01', 'BILL00007', 'B1/WH1-A1', '#4ade80'); // Green
+                resetTemporaryAnimations();
+                truckGraphicContainer.classList.add('animate-vibrate');
+                headlight.classList.add('animate-blink');
+            });
+        });
+
+        btnWhImport.addEventListener('click', () => {
+            setJobInfo('', '', '', '', '#facc15'); // Yellow, no text
+            resetTemporaryAnimations();
+        });
+
+        btnWhExport.addEventListener('click', () => {
+            openTruckModal((selectedTruck) => {
+                appHeaderTruckNo.textContent = selectedTruck;
+                setJobInfo('VO', 'NEPTUNE 01', 'SN000008', 'B2', '#4ade80'); // Green
+                resetTemporaryAnimations();
+                truckGraphicContainer.classList.add('animate-vibrate');
+                headlight.classList.add('animate-blink');
+            });
+        });
+
+        btnLoading.addEventListener('click', () => {
+            setJobInfo('', '', '', '', '#facc15'); // Yellow, no text
+            resetTemporaryAnimations();
+        });
 
     </script>
 
