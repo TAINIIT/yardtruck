@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOST Application</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+
+        /* --- Login Screen Styles --- */
+        .login-container {
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             min-height: 100vh;
+        }
+        .form-label { font-weight: 500; color: #4a5568; }
+        .main-container { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
+        .login-button { background-color: #facc15; transition: background-color 0.3s; }
+        .login-button:hover { background-color: #f59e0b; }
+        .yard-truck-button { background-color: #f5f5dc; border: 1px solid #dcdcdc; transition: background-color 0.3s; }
+        .yard-truck-button:hover { background-color: #eaeabe; }
+        .subtitle-m { color: #4a5568; }
+        .subtitle-o { color: #4299e1; }
+        .subtitle-s { color: #4a5568; }
+        .subtitle-t { color: #4299e1; }
+
+        /* --- Modal Styles --- */
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background-color: white; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); max-width: 90%; width: 600px; overflow: hidden; }
+        .truck-modal-header { background-color: #333; color: white; padding: 0.5rem 1rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+        .modal-body { padding: 1rem; }
+        .truck-modal-footer { background-color: #333; padding: 0.75rem; text-align: center; }
+        .modal-cancel-btn { padding: 0.5rem 1.5rem; background-color: #555; color: white; border-radius: 0.375rem; cursor: pointer; border: 1px solid #777; transition: background-color 0.3s; }
+        .modal-cancel-btn:hover { background-color: #666; }
+        .truck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1px; background-color: #ccc; border: 1px solid #ccc; }
+        .truck-item { background-color: white; padding: 0.75rem; text-align: center; cursor: pointer; transition: background-color 0.2s; }
+        .truck-item:hover, .truck-item.selected { background-color: #3b82f6; color: white; }
+
+        /* --- Main App Screen Styles --- */
+        .main-app-screen {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #e0e0e0;
+        }
+        .app-header {
+            background-color: #3b82f6;
+            color: white;
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            font-weight: bold;
+        }
+        .app-header .status {
+            color: #6ee7b7; /* A light green for connected status */
+        }
+        .app-main {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            position: relative;
+        }
+        .truck-graphic {
+            position: relative;
+            max-width: 900px;
+            width: 100%;
+        }
+        .job-info-overlay {
+            position: absolute;
+            top: 29%;
+            left: 32%;
+            width: 67%;
+            height: 47%;
+            background-color: #facc15; /* Yellow background */
+            border: 2px dotted #333;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .app-footer {
+            background-color: #ccc;
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        .app-footer button {
+            padding: 0.75rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 0.375rem;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        .app-footer button:hover {
+            opacity: 0.85;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- =============================================================== -->
+    <!--                       LOGIN SCREEN                              -->
+    <!-- =============================================================== -->
+    <div id="login-screen-container" class="login-container">
+        <div class="main-container bg-white w-full max-w-2xl rounded-lg overflow-hidden">
+            <header class="bg-blue-600 text-white p-4 flex justify-between items-center">
+                <div class="flex items-baseline">
+                    <h1 class="text-2xl font-bold mr-2">Login</h1>
+                    <span class="text-xs text-blue-200">7.739.1430</span>
+                </div>
+                <div class="text-sm">
+                    <span>Connection Status:</span>
+                    <span id="connection-status" class="font-semibold text-green-300">Connected</span>
+                </div>
+            </header>
+            <main class="p-8 md:p-12">
+                <div class="text-center mb-6">
+                    <h2 class="text-7xl font-bold text-blue-800">MOST</h2>
+                    <p class="text-lg text-gray-500 mt-2 tracking-wide">
+                        <span class="subtitle-m">Multi-purpose</span> <span class="subtitle-o">O</span>peration <span class="subtitle-s">S</span>ystem for <span class="subtitle-t">T</span>erminals
+                    </p>
+                </div>
+                <form id="login-form" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 items-center">
+                        <label for="user-id" class="form-label text-right pr-4 mb-2 md:mb-0">User Id<span class="text-red-500">*</span></label>
+                        <div class="relative col-span-3">
+                            <input type="text" id="user-id" placeholder="input user id" class="w-full p-3 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 items-center">
+                        <label for="password" class="form-label text-right pr-4 mb-2 md:mb-0">Password<span class="text-red-500">*</span></label>
+                        <div class="relative col-span-3">
+                            <input type="password" id="password" placeholder="input password" class="w-full p-3 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 items-center">
+                        <label for="yard-truck-no" class="form-label text-right pr-4 mb-2 md:mb-0">Yard Truck No.</label>
+                        <div class="col-span-3 flex items-center gap-2">
+                            <div class="relative flex-grow">
+                                <input type="text" id="yard-truck-no" placeholder="input yard truck no." class="w-full p-3 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                </div>
+                            </div>
+                            <button type="button" id="yard-truck-btn" class="yard-truck-button text-gray-700 font-semibold py-3 px-4 rounded-md whitespace-nowrap">Yard Truck No.</button>
+                        </div>
+                    </div>
+                </form>
+            </main>
+            <footer>
+                <button type="submit" form="login-form" class="login-button w-full p-4 text-xl font-bold text-gray-800">Log In</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- =============================================================== -->
+    <!--                         MAIN APP SCREEN                         -->
+    <!-- =============================================================== -->
+    <div id="main-app-screen" class="main-app-screen hidden">
+        <header class="app-header">
+            <span id="app-user-id">MOSTADMIN</span> -
+            <span id="app-time">13:50:35</span> -
+            <span id="app-truck-no">TT-2X-20</span> -
+            <span>Version 4.5</span>
+            <span class="status ml-auto">Connected</span>
+        </header>
+        <main class="app-main">
+            <div class="truck-graphic">
+                <!-- UPDATED TRUCK SVG - More detailed and visually appealing -->
+                <svg viewBox="0 0 900 450" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Truck body and details -->
+                    <g stroke="#2d3748" stroke-width="2">
+                        <!-- Trailer chassis -->
+                        <rect x="290" y="340" width="560" height="15" fill="#6b7280" />
+                        
+                        <!-- Cab -->
+                        <path d="M40,340 L40,200 L110,200 L150,150 L250,150 L250,340 Z" fill="#f7fafc" />
+                        <path d="M55,210 L105,210 L140,160 L240,160 L240,260 L55,260 Z" fill="#a0aec0" /> <!-- Window -->
+                        <rect x="250" y="130" width="15" height="80" fill="#a0aec0" /> <!-- Air intake -->
+                        <rect x="20" y="340" width="20" height="30" fill="#a0aec0" /> <!-- Bumper -->
+                        
+                        <!-- Main truck chassis -->
+                        <rect x="40" y="340" width="225" height="20" fill="#4a5568" />
+                        
+                        <!-- Exhaust Pipe -->
+                        <g>
+                            <rect x="180" y="150" width="10" height="60" fill="#a0aec0" transform="rotate(-90 185 180)" />
+                            <rect x="180" y="120" width="10" height="40" fill="#a0aec0" />
+                        </g>
+                    </g>
+
+                    <!-- Wheels (with stripe detail) -->
+                    <g>
+                        <defs>
+                            <g id="wheel">
+                                <circle cx="0" cy="0" r="45" fill="#1a202c" />
+                                <circle cx="0" cy="0" r="42" fill="white" />
+                                <circle cx="0" cy="0" r="40" fill="#1a202c" />
+                                <circle cx="0" cy="0" r="20" fill="#d1d5db" stroke="#6b7280" stroke-width="3" />
+                                <circle cx="0" cy="0" r="5" fill="#4a5568" />
+                            </g>
+                        </defs>
+                        
+                        <use href="#wheel" x="100" y="360" />
+                        <use href="#wheel" x="220" y="360" />
+                        
+                        <use href="#wheel" x="650" y="360" />
+                        <use href="#wheel" x="780" y="360" />
+                    </g>
+                    
+                    <!-- Placeholder for yellow container -->
+                    <rect x="290" y="130" width="600" height="210" fill="transparent" />
+                </svg>
+                <div class="job-info-overlay">
+                    <span class="text-6xl">VI</span>
+                    <span class="text-4xl mt-4">VIET START 01</span>
+                    <span class="text-2xl mt-8">SN No. / BL No.</span>
+                    <span class="text-2xl mt-2">Berth No/ Warehouse Location</span>
+                </div>
+            </div>
+        </main>
+        <footer class="app-footer">
+            <button class="bg-blue-500 text-white">Refresh</button>
+            <button class="bg-red-500 text-white">Stop working(Stoppage)</button>
+            <button id="logout-btn" class="bg-gray-700 text-white">Log Out</button>
+        </footer>
+    </div>
+
+
+    <!-- =============================================================== -->
+    <!--                            MODALS                               -->
+    <!-- =============================================================== -->
+    <div id="truck-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <header class="truck-modal-header">
+                <span id="modal-time">- 10:30:53 -</span>
+                <span>7.739.1430</span>
+                <span class="font-semibold text-green-300">Connected</span>
+            </header>
+            <main class="modal-body">
+                <div id="truck-grid-container" class="truck-grid"></div>
+            </main>
+            <footer class="truck-modal-footer">
+                <button id="truck-modal-cancel" class="modal-cancel-btn">Cancel</button>
+            </footer>
+        </div>
+    </div>
+    <div id="login-status-modal" class="modal-backdrop hidden">
+        <div class="modal-content !w-auto !max-w-md text-center p-8">
+            <h3 id="login-status-title" class="text-2xl font-bold mb-4"></h3>
+            <p id="login-status-message"></p>
+            <button id="login-status-close" class="mt-6 py-2 px-6 bg-blue-600 text-white rounded-md">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // --- SCRIPT FOR INTERACTIVITY ---
+
+        // --- DATA ---
+        const truckList = ['G2501', 'G3601', 'G3603', 'TR001', 'TR003', 'TR004', 'TR006', 'TR007', 'TR008', 'TR009', 'TR011', 'TR012', 'TR013', 'TRD01', 'TRL02', 'TRL03', 'TT016', 'TT017', 'TT018', 'TT019', 'TT020', 'TT021', 'TT022', 'TT023', 'TT025', 'TT027'];
+
+        // --- ELEMENTS ---
+        const loginScreenContainer = document.getElementById('login-screen-container');
+        const mainAppScreen = document.getElementById('main-app-screen');
+        const yardTruckBtn = document.getElementById('yard-truck-btn');
+        const truckModal = document.getElementById('truck-modal');
+        const truckModalCancelBtn = document.getElementById('truck-modal-cancel');
+        const truckGridContainer = document.getElementById('truck-grid-container');
+        const yardTruckInput = document.getElementById('yard-truck-no');
+        const loginForm = document.getElementById('login-form');
+        const userIdInput = document.getElementById('user-id');
+        const passwordInput = document.getElementById('password');
+        const loginStatusModal = document.getElementById('login-status-modal');
+        const loginStatusTitle = document.getElementById('login-status-title');
+        const loginStatusMessage = document.getElementById('login-status-message');
+        const loginStatusCloseBtn = document.getElementById('login-status-close');
+        const modalTimeEl = document.getElementById('modal-time');
+        const logoutBtn = document.getElementById('logout-btn');
+        const appHeaderTime = document.getElementById('app-time');
+        const appHeaderUserId = document.getElementById('app-user-id');
+        const appHeaderTruckNo = document.getElementById('app-truck-no');
+
+        // --- STATE ---
+        let truckModalTimeInterval;
+        let appTimeInterval;
+
+        // --- FUNCTIONS ---
+        function showModal(modalElement) { modalElement.classList.remove('hidden'); }
+        function hideModal(modalElement) { modalElement.classList.add('hidden'); }
+
+        function updateClock(element) {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { hour12: false });
+            element.textContent = timeString;
+        }
+
+        function populateTruckGrid() {
+            truckGridContainer.innerHTML = '';
+            truckList.forEach(truck => {
+                const item = document.createElement('div');
+                item.className = 'truck-item';
+                item.textContent = truck;
+                item.addEventListener('click', () => {
+                    yardTruckInput.value = truck;
+                    hideModal(truckModal);
+                    clearInterval(truckModalTimeInterval);
+                });
+                truckGridContainer.appendChild(item);
+            });
+        }
+
+        function showLoginStatus(success, message) {
+            loginStatusTitle.textContent = success ? 'Login Successful' : 'Login Failed';
+            loginStatusTitle.className = success ? 'text-green-600 text-2xl font-bold mb-4' : 'text-red-600 text-2xl font-bold mb-4';
+            loginStatusMessage.textContent = message;
+            showModal(loginStatusModal);
+        }
+
+        function handleLogin(userId, truckNo) {
+            // Hide login screen, show app screen
+            loginScreenContainer.classList.add('hidden');
+            mainAppScreen.classList.remove('hidden');
+
+            // Update app header
+            appHeaderUserId.textContent = userId;
+            appHeaderTruckNo.textContent = truckNo || 'N/A'; // Use N/A if no truck is selected
+
+            // Start the main app clock
+            updateClock(appHeaderTime);
+            appTimeInterval = setInterval(() => updateClock(appHeaderTime), 1000);
+        }
+
+        function handleLogout() {
+             // Hide app screen, show login screen
+            mainAppScreen.classList.add('hidden');
+            loginScreenContainer.classList.remove('hidden');
+
+            // Clear credentials and stop clock
+            userIdInput.value = '';
+            passwordInput.value = '';
+            yardTruckInput.value = '';
+            clearInterval(appTimeInterval);
+        }
+
+        // --- EVENT LISTENERS ---
+        yardTruckBtn.addEventListener('click', () => {
+            populateTruckGrid();
+            updateClock(modalTimeEl);
+            truckModalTimeInterval = setInterval(() => updateClock(modalTimeEl), 1000);
+            showModal(truckModal);
+        });
+
+        truckModalCancelBtn.addEventListener('click', () => {
+            hideModal(truckModal);
+            clearInterval(truckModalTimeInterval);
+        });
+
+        loginForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const userId = userIdInput.value.trim();
+            const password = passwordInput.value;
+            const truckNo = yardTruckInput.value.trim();
+
+            if (userId === 'MOSTADMIN' && password === '909090') {
+                handleLogin(userId, truckNo);
+            } else {
+                showLoginStatus(false, 'Invalid User ID or Password. Please try again.');
+            }
+        });
+
+        loginStatusCloseBtn.addEventListener('click', () => {
+            hideModal(loginStatusModal);
+        });
+
+        logoutBtn.addEventListener('click', handleLogout);
+
+    </script>
+
+</body>
+</html>
