@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOST Application</title>
+    <title>MOST Yard Truck</title>
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter -->
@@ -106,7 +106,7 @@
             color: #333;
             transition: background-color 0.3s ease;
             text-align: center;
-            line-height: 1.2;
+            line-height: 1.4; /* Adjusted line height */
         }
         .app-footer {
             background-color: #ccc;
@@ -281,10 +281,14 @@
                     </g>
                 </svg>
                 <div id="job-info-overlay" class="job-info-overlay">
-                    <span id="job-type" class="text-5xl font-black"></span>
-                    <span id="job-vessel" class="text-3xl mt-3"></span>
-                    <span id="job-sn-bl" class="text-xl mt-6"></span>
-                    <span id="job-location" class="text-xl mt-1"></span>
+                    <div class="flex items-center space-x-4">
+                        <span id="job-type" class="text-6xl font-black"></span>
+                        <span id="job-vessel" class="text-3xl"></span>
+                    </div>
+                    <div class="mt-4 text-2xl space-y-2">
+                        <p id="job-sn-bl"></p>
+                        <p id="job-location"></p>
+                    </div>
                 </div>
             </div>
         </main>
@@ -455,8 +459,8 @@
         function setJobInfo(type, vessel, snbl, location, color) {
             jobTypeEl.textContent = type;
             jobVesselEl.textContent = vessel;
-            jobSnBlEl.textContent = snbl;
-            jobLocationEl.textContent = location;
+            jobSnBlEl.textContent = snbl ? `Document No: ${snbl}` : '';
+            jobLocationEl.textContent = location ? `Berth No: ${location}` : '';
             jobInfoOverlay.style.backgroundColor = color;
         }
 
@@ -532,7 +536,6 @@
                 resetAllAnimations();
                 truckGraphicContainer.classList.add('animate-vibrate');
                 headlight.classList.add('animate-blink');
-                // Bánh xe không quay
             });
         });
 
@@ -548,7 +551,6 @@
                 resetAllAnimations();
                 truckGraphicContainer.classList.add('animate-vibrate');
                 headlight.classList.add('animate-blink');
-                // Bánh xe không quay
             });
         });
 
